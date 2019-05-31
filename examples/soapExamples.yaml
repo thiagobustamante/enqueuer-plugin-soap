@@ -1,0 +1,12 @@
+publishers:
+  - name: Publisher Example
+    wsdlLocation: './my-wsdl.wsdl'
+    options:
+      endpoint: 'myservicehost'
+      preserveWhitespace: true
+    headers:
+      myHeader: headerValue
+    security:
+      bearer:
+        token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+      
