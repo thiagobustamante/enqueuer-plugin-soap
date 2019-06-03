@@ -17,11 +17,13 @@
   },
   "author": "Thiago da Rosa de Bustamante <thiago@cruxframework.org>",
   "keywords": [
-    "Enqueuer",
-    "Tests",
-    "Soap",
-    "Integration Tests",
-    "Acceptance Tests"
+    "enqueuer",
+    "nqr",
+    "plugin",
+    "tists",
+    "soap",
+    "integration Tests",
+    "acceptance Tests"
   ],
   "license": "MIT",
   "nyc": {
