@@ -48,8 +48,8 @@
   "dependencies": {
     "assert": "^2.0.0",
     "debug": "^4.1.1",
-    "lodash": "^4.17.11",
     "enqueuer-plugins-template": "^1.0.10",
+    "lodash": "^4.17.11",
     "soap": "^0.27.1"
   },
   "devDependencies": {
@@ -58,22 +58,22 @@
     "@types/chai": "^4.1.7",
     "@types/cucumber": "^4.0.5",
     "@types/debug": "^4.1.4",
-    "@types/lodash": "^4.14.119",
-    "@types/mocha": "^5.2.5",
-    "@types/node": "^12.0.2",
+    "@types/lodash": "^4.14.134",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^12.0.8",
     "@types/soap": "^0.21.0",
     "chai": "^4.2.0",
     "codecov": "^3.3.0",
     "cross-env": "^5.2.0",
-    "enqueuer": "^4.7.2",
+    "enqueuer": "^4.7.6",
     "mocha": "^5.2.0",
     "nyc": "^14.1.1",
     "rimraf": "^2.6.3",
     "source-map-support": "^0.5.9",
     "ts-node": "^7.0.1",
-    "tslint": "^5.15.0",
+    "tslint": "^5.17.0",
     "tslint-config-prettier": "^1.17.0",
-    "typescript": "^3.2.2"
+    "typescript": "^3.5.2"
   },
   "peerDependencies": {
     "enqueuer": "^4.7.2"

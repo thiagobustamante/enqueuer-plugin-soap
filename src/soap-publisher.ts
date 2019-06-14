@@ -1,25 +1,25 @@
 'use strict';
-import { Logger, MainInstance, Publisher, PublisherModel, PublisherProtocol } from 'enqueuer-plugins-template';
+import debug from 'debug';
+import { MainInstance, Publisher, PublisherModel, PublisherProtocol } from 'enqueuer-plugins-template';
 import * as _ from 'lodash';
 import * as soap from 'soap';
-import * as util from 'util';
 import { SoapSecurityFactory } from './security-factory';
-
-export interface SoapTarget {
-    service: string;
-    port: string;
-    operation: string;
-}
+import { SoapConfig } from './soap-config';
 
 export class SoapPublisher extends Publisher {
     private headers: any;
     private timeout: any;
-    private target: SoapTarget;
     private requestOptions: any;
+    private soap: SoapConfig;
+    private debugger = debug('Enqueuer:Plugin:Soap:Publisher');
 
     constructor(publisher: PublisherModel) {
         super(publisher);
+        if (this.debugger.enabled) {
+            this.debugger(`Creating new SOAP publihser <<%s>>. Configuration: %J`, this.name, _.omit(publisher, 'parent'));
+        }
 
+        this.soap = this.soap || {};
         this.payload = this.payload || '';
         this.headers = this.headers || {};
         this.timeout = this.timeout || 3000;
@@ -27,29 +27,55 @@ export class SoapPublisher extends Publisher {
     }
 
     public async publish(): Promise<any> {
-        if (!this.target || !this.target.service || !this.target.port || !this.target.operation) {
+        if (!this.soap.service || !this.soap.port || !this.soap.operation) {
             throw new Error('Invalid soap target');
         }
         const client = await this.createClient();
-        const soapMethod = _.get(client, `${this.target.service}.${this.target.port}.${this.target.operation}`);
+        const soapMethod = _.get(client, `${this.soap.service}.${this.soap.port}.${this.soap.operation}`);
         if (!soapMethod) {
             throw new Error('Can not tind a soap method to call. Please verify your publisher configuration.');
         }
-        const result = await util.promisify(soapMethod)(this.payload, this.requestOptions, this.headers);
+        if (this.debugger.enabled) {
+            this.debugger(`Sending soap request.Payload: %J. RequestOptions: %J. Headers: %J`, this.payload, this.requestOptions, this.headers);
+        }
+        const result = await this.callSoapMethod(soapMethod);
+        if (this.debugger.enabled) {
+            this.debugger(`Received soap response: %J.`, result);
+        }
         return result;
     }
 
+    private callSoapMethod(soapMethod: any) {
+        return new Promise<any>((resolve, reject) => {
+            soapMethod(this.payload, this.requestOptions, this.headers, (err: any, result: any) => {
+                this.debugger(`Response received. Error: %o. Result: %o. `, err, result);
+                if (err) {
+                    return reject(err);
+                }
+                return resolve(result);
+            });
+        });
+    }
+
     private async createClient() {
-        const client: soap.Client = await soap.createClientAsync(this.wsdlLocation, this.options);
+        if (this.debugger.enabled) {
+            this.debugger(`Creating SOAP client. WSDL: %s, with Options: %J.`, this.soap.wsdl, this.options);
+        }
+        const client: soap.Client = await soap.createClientAsync(this.soap.wsdl, this.options, 'http://localhost:9876/server');
+        if (this.debugger.enabled) {
+            this.debugger(`SOAP client created: %j.`, client.describe());
+        }
+
         if (this.security) {
+            this.debugger(`Configuring SOAP security for options: %J.`, this.security);
             const clientSecurity = new SoapSecurityFactory().create(this.security);
             client.setSecurity(clientSecurity);
         }
         client.on('request', (xml, eid) => {
-            Logger.debug(`Soap request sent: ${xml}, to exchange id: ${eid}`);
+            this.debugger('Soap request sent: %s, to exchange id: %s', xml, eid);
         });
         client.on('response', (body, response, eid) => {
-            Logger.debug(`Soap response received: ${JSON.stringify(response)}. exchange id: ${eid}`);
+            this.debugger(`Soap response received: %J. exchange id: %s`, response, eid);
         });
         return client;
     }
