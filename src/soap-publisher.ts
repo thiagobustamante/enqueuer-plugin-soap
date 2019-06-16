@@ -36,11 +36,11 @@ export class SoapPublisher extends Publisher {
             throw new Error('Can not tind a soap method to call. Please verify your publisher configuration.');
         }
         if (this.debugger.enabled) {
-            this.debugger(`Sending soap request.Payload: %J. RequestOptions: %J. Headers: %J`, this.payload, this.requestOptions, this.headers);
+            this.debugger(`%s. Sending soap request.Payload: %J. RequestOptions: %J. Headers: %J`, this.name, this.payload, this.requestOptions, this.headers);
         }
         const result = await this.callSoapMethod(soapMethod);
         if (this.debugger.enabled) {
-            this.debugger(`Received soap response: %J.`, result);
+            this.debugger(`%s. Received soap response: %J.`, this.name, result);
         }
         return result;
     }
@@ -48,7 +48,7 @@ export class SoapPublisher extends Publisher {
     private callSoapMethod(soapMethod: any) {
         return new Promise<any>((resolve, reject) => {
             soapMethod(this.payload, this.requestOptions, this.headers, (err: any, result: any) => {
-                this.debugger(`Response received. Error: %o. Result: %o. `, err, result);
+                this.debugger(`%s. Response received. Error: %o. Result: %o. `, this.name, err, result);
                 if (err) {
                     return reject(err);
                 }
@@ -59,23 +59,23 @@ export class SoapPublisher extends Publisher {
 
     private async createClient() {
         if (this.debugger.enabled) {
-            this.debugger(`Creating SOAP client. WSDL: %s, with Options: %J.`, this.soap.wsdl, this.options);
+            this.debugger(`%s. Creating SOAP client. WSDL: %s, with Options: %J.`, this.name, this.soap.wsdl, this.options);
         }
-        const client: soap.Client = await soap.createClientAsync(this.soap.wsdl, this.options, 'http://localhost:9876/server');
+        const client: soap.Client = await soap.createClientAsync(this.soap.wsdl, this.options, this.endpoint);
         if (this.debugger.enabled) {
-            this.debugger(`SOAP client created: %j.`, client.describe());
+            this.debugger(`%s. SOAP client created: %j.`, this.name, client.describe());
         }
 
         if (this.security) {
-            this.debugger(`Configuring SOAP security for options: %J.`, this.security);
+            this.debugger(`%s. Configuring SOAP security for options: %J.`, this.name, this.security);
             const clientSecurity = new SoapSecurityFactory().create(this.security);
             client.setSecurity(clientSecurity);
         }
         client.on('request', (xml, eid) => {
-            this.debugger('Soap request sent: %s, to exchange id: %s', xml, eid);
+            this.debugger('%s. Soap request sent: %s, to exchange id: %s', this.name, xml, eid);
         });
         client.on('response', (body, response, eid) => {
-            this.debugger(`Soap response received: %J. exchange id: %s`, response, eid);
+            this.debugger(`%s. Soap response received: %J. exchange id: %s`, this.name, response, eid);
         });
         return client;
     }
