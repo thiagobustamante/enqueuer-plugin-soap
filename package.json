@@ -76,7 +76,7 @@
     "typescript": "^3.5.2"
   },
   "peerDependencies": {
-    "enqueuer": "^4.7.2"
+    "enqueuer": "^4.7.6"
   },
   "repository": {
     "type": "git",

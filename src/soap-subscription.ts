@@ -25,9 +25,7 @@ export class SoapSubscription extends Subscription {
 
     constructor(subscription: SubscriptionModel) {
         super(subscription);
-        if (this.debugger.enabled) {
-            this.debugger(`Creating new SOAP subscription <<%s>>. Configuration: %J`, this.name, _.omit(subscription, 'parent'));
-        }
+        this.debugger(`Creating new SOAP subscription <<%s>>. Configuration: %J`, this.name, _.omit(subscription, 'parent'));
         this.soap = this.soap || {};
         this.type = this.type.toLowerCase();
         this.secureServer = this.isSecureServer();
@@ -38,9 +36,9 @@ export class SoapSubscription extends Subscription {
         try {
             this.httpServer = await HttpContainerPool.getApp(this.port, this.secureServer, this.credentials);
             this.httpServer.use((req: any, res: any, next: any) => {
-                this.debugger(`%sgot hit URL: %o`, this.name, req.url);
-                this.debugger(`%sgot hit with headers: %o`, this.name, req.headers);
-                this.debugger(`%sgot hit with body: %o`, this.name, req.rawBody);
+                this.debugger(`%s got hit URL: %o`, this.name, req.url);
+                this.debugger(`%s got hit with headers: %o`, this.name, req.headers);
+                this.debugger(`%s got hit with body: %o`, this.name, req.rawBody);
                 req.body = req.rawBody;
                 next();
             });
@@ -78,10 +76,10 @@ export class SoapSubscription extends Subscription {
     }
 
     public async sendResponse(): Promise<void> {
-        this.debugger(`%ssending response: %J`, this.name, this.response);
+        this.debugger(`%s sending response: %J`, this.name, this.response);
         try {
             this.sendResults(this.response);
-            this.debugger(`${this.type} response sent`);
+            this.debugger(`%s ${this.type} response sent`, this.name);
         } catch (err) {
             throw new Error(`${this.type} response back sending error: ${err}`);
         }
@@ -90,12 +88,13 @@ export class SoapSubscription extends Subscription {
     private createServiceHandler(messageReceived: (message: any) => void, errorReceived: (error: any) => void) {
         this.debugger('%s. Creating service handler for service [%s] port[%s] operation[%s].', this.name, this.soap.service, this.soap.port, this.soap.operation);
         const serviceHandler = _.set({}, `${this.soap.service}.${this.soap.port}.${this.soap.operation}`,
-            (args: any, headers: any) => {
+            (args: any, cb: any, headers: any) => {
                 return new Promise<any>((resolve, reject) => {
                     try {
                         const message = this.createMessageReceivedStructure(args, headers);
                         this.sendResults = resolve;
                         if (this.proxy) {
+                            this.executeHookEvent('onOriginalMessageReceived', message);
                             this.callThroughProxy(message, messageReceived, errorReceived);
                         } else {
                             messageReceived(message);
@@ -116,6 +115,7 @@ export class SoapSubscription extends Subscription {
             this.debugger(`%s. ${this.type}:${this.port} got redirection response: %J`, this.name, this.response);
             mesageReceived(message);
         } catch (err) {
+            this.debugger(`%s. ${this.type}:${this.port} got error response: %J`, this.name, err);
             errorReceived(err);
         }
     }
@@ -129,19 +129,19 @@ export class SoapSubscription extends Subscription {
 
     private async redirectCall(message: Message): Promise<any> {
         const config: PublisherModel = {
-            headers: message.headers,
+            headers: _.cloneDeep(message.headers),
             name: this.name,
             options: {
                 endpoint: this.endpoint
             },
-            payload: message.body,
-            soap: this.soap,
+            payload: _.cloneDeep(message.body),
+            soap: _.cloneDeep(this.soap),
             timeout: this.timeout,
             type: this.type
         };
 
         const soapPublisher = new SoapPublisher(config);
-        this.debugger(`%s. Redirecting call from ${this.path} (${this.soap.port}) to ${this.endpoint}`, this.name);
+        this.debugger(`%s. Redirecting call from localhost:${this.port}(${this.path}) to ${this.endpoint}`, this.name);
         return await soapPublisher.publish();
     }
 
@@ -160,7 +160,10 @@ export class SoapSubscription extends Subscription {
 export function entryPoint(mainInstance: MainInstance): void {
     const soapProtocol = new SubscriptionProtocol('soap',
         (subscriptionModel: SubscriptionModel) => new SoapSubscription(subscriptionModel),
-        ['headers', 'body'])
+        {
+            onMessageReceived: ['headers', 'body'],
+            onOriginalMessageReceived: ['headers', 'body']
+        })
         .addAlternativeName('soap-proxy', 'soap-server')
         .setLibrary('soap') as SubscriptionProtocol;
     mainInstance.protocolManager.addProtocol(soapProtocol);
