@@ -36,19 +36,22 @@ export class SoapPublisher extends Publisher {
             throw new Error('Can not tind a soap method to call. Please verify your publisher configuration.');
         }
         this.debugger(`%s. Sending soap request.Payload: %J. RequestOptions: %J. Headers: %J`, this.name, this.payload, this.requestOptions, this.headers);
-        const result = await this.callSoapMethod(soapMethod);
-        this.debugger(`%s. Received soap response: %J.`, this.name, result);
-        return result;
+        const response = await this.callSoapMethod(soapMethod);
+        this.debugger(`%s. Received soap response: %J.`, this.name, response);
+        return response;
     }
 
     private callSoapMethod(soapMethod: any) {
         return new Promise<any>((resolve, reject) => {
-            soapMethod(this.payload, this.requestOptions, this.httpHeaders, (err: any, result: any) => {
+            soapMethod(this.payload, this.requestOptions, this.httpHeaders, (err: any, result: any, res: any, headers: any, req: any) => {
                 this.debugger(`%s. Response received. Error: %o. Result: %o. `, this.name, err, result);
                 if (err) {
                     return reject(err);
                 }
-                return resolve(result);
+                return resolve({
+                    body: result,
+                    headers: headers
+                });
             });
         });
     }
@@ -79,6 +82,6 @@ export class SoapPublisher extends Publisher {
 export function entryPoint(mainInstance: MainInstance): void {
     const soapProtocol = new PublisherProtocol('soap',
         (publisherModel: PublisherModel) => new SoapPublisher(publisherModel))
-        .setLibrary('soap') as PublisherProtocol;
+        .setLibrary('soap');
     mainInstance.protocolManager.addProtocol(soapProtocol);
 }

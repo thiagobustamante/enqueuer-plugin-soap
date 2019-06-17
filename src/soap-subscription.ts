@@ -17,6 +17,7 @@ interface Message {
 
 export class SoapSubscription extends Subscription {
     private readonly proxy: boolean;
+    private redirect: Message;
     private sendResults?: any;
     private secureServer: boolean;
     private httpServer: any;
@@ -94,8 +95,9 @@ export class SoapSubscription extends Subscription {
                         const message = this.createMessageReceivedStructure(args, headers);
                         this.sendResults = resolve;
                         if (this.proxy) {
-                            this.executeHookEvent('onOriginalMessageReceived', message);
-                            this.callThroughProxy(message, messageReceived, errorReceived);
+                            this.redirect = message;
+                            this.executeHookEvent('onOriginalMessageReceived', this.redirect);
+                            this.callThroughProxy(this.redirect, messageReceived, errorReceived);
                         } else {
                             messageReceived(message);
                         }
@@ -113,7 +115,7 @@ export class SoapSubscription extends Subscription {
         try {
             this.response = await this.redirectCall(message);
             this.debugger(`%s. ${this.type}:${this.port} got redirection response: %J`, this.name, this.response);
-            mesageReceived(message);
+            mesageReceived(this.response);
         } catch (err) {
             this.debugger(`%s. ${this.type}:${this.port} got error response: %J`, this.name, err);
             errorReceived(err);
@@ -122,19 +124,19 @@ export class SoapSubscription extends Subscription {
 
     private createMessageReceivedStructure(args: any, headers: any): Message {
         return {
-            body: args,
-            headers: headers
+            body: _.cloneDeep(args),
+            headers: _.cloneDeep(headers || {})
         };
     }
 
     private async redirectCall(message: Message): Promise<any> {
         const config: PublisherModel = {
-            headers: _.cloneDeep(message.headers),
+            headers: message.headers,
             name: this.name,
             options: {
                 endpoint: this.endpoint
             },
-            payload: _.cloneDeep(message.body),
+            payload: message.body,
             soap: _.cloneDeep(this.soap),
             timeout: this.timeout,
             type: this.type
@@ -165,6 +167,6 @@ export function entryPoint(mainInstance: MainInstance): void {
             onOriginalMessageReceived: ['headers', 'body']
         })
         .addAlternativeName('soap-proxy', 'soap-server')
-        .setLibrary('soap') as SubscriptionProtocol;
+        .setLibrary('soap');
     mainInstance.protocolManager.addProtocol(soapProtocol);
 }
