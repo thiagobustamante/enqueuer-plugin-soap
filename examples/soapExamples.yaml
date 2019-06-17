@@ -1,12 +1,64 @@
+subscriptions:
+  - name: Soap Server
+    type: soap
+    port: 8765
+    path: /server
+    soap:
+      wsdl: './examples/wsdl/AirTicketLLS2.12.0RQ.wsdl'
+      service: AirTicketService
+      port: AirTicketPortType
+      operation: AirTicketRQ
+    response: 
+      applicationResults:
+        success: 
+          type: Application
+    onMessageReceived:
+      assertions:
+        - expect: body.AirTicketRQ.OptionalQualifiers.FOP_Qualifiers.BasicFOP.attributes.Type
+          toBeEqualTo: `MyFOP`
+        - expect: headers.myheader
+          toBeEqualTo: `Test Header`
+        - expect: headers.newHeader
+          toBeEqualTo: `New Header`
+  - name: Soap Proxy
+    type: soap-proxy
+    port: 9876
+    path: /server
+    soap:
+      wsdl: './examples/wsdl/AirTicketLLS2.12.0RQ.wsdl'
+      service: AirTicketService
+      port: AirTicketPortType
+      operation: AirTicketRQ
+    endpoint: 'http://localhost:8765/server'
+    onOriginalMessageReceived:
+      script: this.redirect.headers.newHeader = 'New Header'; console.log(this.response);
+      assertions:
+        - expect: body.AirTicketRQ.OptionalQualifiers.FOP_Qualifiers.BasicFOP.attributes.Type
+          toBeEqualTo: `MyFOP`
+        - expect: headers['myheader']
+          toBeEqualTo: `Test Header`
+    onMessageReceived:
+      script: console.log(this.response);
+      assertions:
+        - expect: body.applicationResults.success.type
+          toBeEqualTo: `Application`
 publishers:
   - name: Publisher Example
-    wsdlLocation: './my-wsdl.wsdl'
+    type: soap
+    payload:
+      AirTicketRQ:
+        OptionalQualifiers:
+          FOP_Qualifiers:
+            BasicFOP:
+              attributes:
+                Type: MyFOP
+    headers: 
+      myheader: Test Header
+    soap:
+      wsdl: './examples/wsdl/AirTicketLLS2.12.0RQ.wsdl'
+      service: AirTicketService
+      port: AirTicketPortType
+      operation: AirTicketRQ
     options:
-      endpoint: 'myservicehost'
+      endpoint: 'http://localhost:9876/server'
       preserveWhitespace: true
-    headers:
-      myHeader: headerValue
-    security:
-      bearer:
-        token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
-      

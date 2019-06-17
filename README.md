@@ -12,7 +12,7 @@ npm i enqueuer-plugin-soap
 subscriptions:
   - name: Soap Server
     type: soap
-    port: 8765
+    port: 9876
     path: /server
     soap:
       wsdl: './examples/wsdl/MyService.wsdl'
