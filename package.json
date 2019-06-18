@@ -80,10 +80,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/thiagobustamante/enqueuer-cucumber.git"
+    "url": "https://github.com/thiagobustamante/enqueuer-plugin-soap.git"
   },
   "bugs": {
-    "url": "https://github.com/thiagobustamante/enqueuer-cucumber/issues"
+    "url": "https://github.com/thiagobustamante/enqueuer-plugin-soap/issues"
   },
   "directories": {
     "lib": "dist"
