@@ -1,7 +1,7 @@
 'use strict';
 
 import debug from 'debug';
-import { MainInstance } from 'enqueuer-plugins-template';
+import { MainInstance } from 'enqueuer';
 import * as publisher from './soap-publisher';
 import * as subscription from './soap-subscription';
 

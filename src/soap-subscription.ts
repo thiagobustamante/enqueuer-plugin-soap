@@ -1,8 +1,12 @@
 'use strict';
 
 import debug from 'debug';
-import { MainInstance, PublisherModel, Subscription, SubscriptionModel, SubscriptionProtocol } from 'enqueuer-plugins-template';
+import {
+    InputPublisherModel, InputSubscriptionModel, MainInstance,
+    Subscription, SubscriptionProtocol
+} from 'enqueuer';
 import { HttpContainerPool } from 'enqueuer/js/pools/http-container-pool';
+import { ProtocolDocumentation } from 'enqueuer/js/protocols/protocol-documentation';
 import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as soap from 'soap';
@@ -24,7 +28,7 @@ export class SoapSubscription extends Subscription {
     private soap: SoapConfig;
     private debugger = debug('Enqueuer:Plugin:Soap:Subscription');
 
-    constructor(subscription: SubscriptionModel) {
+    constructor(subscription: InputSubscriptionModel) {
         super(subscription);
         this.debugger(`Creating new SOAP subscription <<%s>>. Configuration: %J`, this.name, _.omit(subscription, 'parent'));
         this.soap = this.soap || {};
@@ -99,6 +103,7 @@ export class SoapSubscription extends Subscription {
                             this.executeHookEvent('onOriginalMessageReceived', this.redirect);
                             this.callThroughProxy(this.redirect, messageReceived, errorReceived);
                         } else {
+                            this.executeHookEvent('onMessageReceived', message);
                             messageReceived(message);
                         }
                     } catch (error) {
@@ -115,6 +120,7 @@ export class SoapSubscription extends Subscription {
         try {
             this.response = await this.redirectCall(message);
             this.debugger(`%s. ${this.type}:${this.port} got redirection response: %J`, this.name, this.response);
+            this.executeHookEvent('onMessageReceived', this.response);
             mesageReceived(this.response);
         } catch (err) {
             this.debugger(`%s. ${this.type}:${this.port} got error response: %J`, this.name, err);
@@ -130,8 +136,9 @@ export class SoapSubscription extends Subscription {
     }
 
     private async redirectCall(message: Message): Promise<any> {
-        const config: PublisherModel = {
+        const config: InputPublisherModel = {
             headers: message.headers,
+            ignoreHooks: true,
             name: this.name,
             options: {
                 endpoint: this.endpoint
@@ -160,12 +167,9 @@ export class SoapSubscription extends Subscription {
 }
 
 export function entryPoint(mainInstance: MainInstance): void {
+    const soapSubscriptionDoc: ProtocolDocumentation = require('./soap-subscription-doc.json');
     const soapProtocol = new SubscriptionProtocol('soap',
-        (subscriptionModel: SubscriptionModel) => new SoapSubscription(subscriptionModel),
-        {
-            onMessageReceived: ['headers', 'body'],
-            onOriginalMessageReceived: ['headers', 'body']
-        })
+        (subscriptionModel: InputSubscriptionModel) => new SoapSubscription(subscriptionModel), soapSubscriptionDoc)
         .addAlternativeName('soap-proxy', 'soap-server')
         .setLibrary('soap');
     mainInstance.protocolManager.addProtocol(soapProtocol);

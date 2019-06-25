@@ -1,12 +1,12 @@
 {
   "name": "enqueuer-plugin-soap",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "SOAP Plugin for enqueuer",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
   "scripts": {
     "start": "tsc -w",
-    "build": "npm run clean && tsc",
+    "build": "npm run clean && tsc && copyfiles -u 1 src/*.json dist",
     "clean": "rimraf dist",
     "lint": "tslint ./src/**/*.ts ./test/**/*.ts",
     "lint:fix": "tslint --fix ./src/**/*.ts ./test/**/*.ts -t verbose",
@@ -48,7 +48,6 @@
   "dependencies": {
     "assert": "^2.0.0",
     "debug": "^4.1.1",
-    "enqueuer-plugins-template": "^1.0.10",
     "lodash": "^4.17.11",
     "soap": "^0.27.1"
   },
@@ -64,8 +63,9 @@
     "@types/soap": "^0.21.0",
     "chai": "^4.2.0",
     "codecov": "^3.3.0",
+    "copyfiles": "^2.1.0",
     "cross-env": "^5.2.0",
-    "enqueuer": "^4.7.6",
+    "enqueuer": "^5.0.0",
     "mocha": "^5.2.0",
     "nyc": "^14.1.1",
     "rimraf": "^2.6.3",
@@ -76,7 +76,7 @@
     "typescript": "^3.5.2"
   },
   "peerDependencies": {
-    "enqueuer": "^4.7.6"
+    "enqueuer": "^5.0.0"
   },
   "repository": {
     "type": "git",

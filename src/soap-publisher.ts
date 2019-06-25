@@ -1,6 +1,7 @@
 'use strict';
 import debug from 'debug';
-import { MainInstance, Publisher, PublisherModel, PublisherProtocol } from 'enqueuer-plugins-template';
+import { InputPublisherModel, MainInstance, Publisher, PublisherProtocol } from 'enqueuer';
+import { ProtocolDocumentation } from 'enqueuer/js/protocols/protocol-documentation';
 import * as _ from 'lodash';
 import * as soap from 'soap';
 import { SoapSecurityFactory } from './security-factory';
@@ -13,7 +14,7 @@ export class SoapPublisher extends Publisher {
     private soap: SoapConfig;
     private debugger = debug('Enqueuer:Plugin:Soap:Publisher');
 
-    constructor(publisher: PublisherModel) {
+    constructor(publisher: InputPublisherModel) {
         super(publisher);
         if (this.debugger.enabled) {
             this.debugger(`Creating new SOAP publihser <<%s>>. Configuration: %J`, this.name, _.omit(publisher, 'parent'));
@@ -38,6 +39,11 @@ export class SoapPublisher extends Publisher {
         this.debugger(`%s. Sending soap request.Payload: %J. RequestOptions: %J. Headers: %J`, this.name, this.payload, this.requestOptions, this.headers);
         const response = await this.callSoapMethod(soapMethod);
         this.debugger(`%s. Received soap response: %J.`, this.name, response);
+
+        if (!this.ignoreHooks) {
+            this.executeHookEvent('onResponseReceived', response);
+            this.executeHookEvent('onMessageReceived', response);
+        }
         return response;
     }
 
@@ -80,8 +86,9 @@ export class SoapPublisher extends Publisher {
 }
 
 export function entryPoint(mainInstance: MainInstance): void {
+    const soapPublisherDoc: ProtocolDocumentation = require('./soap-publisher-doc.json');
     const soapProtocol = new PublisherProtocol('soap',
-        (publisherModel: PublisherModel) => new SoapPublisher(publisherModel))
-        .setLibrary('soap');
+        (publisherModel: InputPublisherModel) => new SoapPublisher(publisherModel),
+        soapPublisherDoc).setLibrary('soap');
     mainInstance.protocolManager.addProtocol(soapProtocol);
 }
