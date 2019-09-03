@@ -2,18 +2,16 @@
 
 import debug from 'debug';
 import { MainInstance } from 'enqueuer';
-import * as publisher from './soap-publisher';
-import * as subscription from './soap-subscription';
+import * as subscription from './http-bind-subscription';
 
 
 debug.formatters.J = (v) => {
     return JSON.stringify(v, null, 2);
 };
 
-const tracer = debug('Enqueuer:Plugin:Soap');
+const tracer = debug('Enqueuer:Plugin:HttpBind');
 export function entryPoint(mainInstance: MainInstance): void {
-    tracer('Loading Enqueuer SOAP plugin');
+    tracer('Loading Enqueuer HttpBind plugin');
     subscription.entryPoint(mainInstance);
-    publisher.entryPoint(mainInstance);
-    tracer('Enqueuer SOAP plugin loaded');
+    tracer('Enqueuer HttpBind plugin loaded');
 }

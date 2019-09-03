@@ -1,6 +1,6 @@
 {
-    "description": "The SOAP subscription provides implementations of soap servers and proxies",
-    "libraryHomepage": "https://github.com/vpulim/node-soap",
+    "description": "The HTTP-Bind subscription provides implementations for an http service that can bind only some requests",
+    "libraryHomepage": "https://github.com/thiagobustamante/enqueuer-plugin-http-bind",
     "schema": {
         "attributes": {
             "port": {
@@ -8,27 +8,38 @@
                 "type": "int",
                 "example": 8080
             },
-            "soap": {
+            "bodyType": {
                 "required": true,
-                "description": "Configure the soap operation",
+                "description": "The type of the body content. Accept XML or JSON",
+                "type": "string",
+                "defaultValue": "JSON"
+            },
+            "bind": {
+                "required": true,
+                "description": "Configure the bindings for the service",
                 "type": {
-                    "wsdl": {
+                    "value": {
                         "required": true,
-                        "description": "SOAP service descriptor (wsdl)",
+                        "description": "The expected value for the current expression",
                         "type": "string",
-                        "example": "./folder/my-service.wsdl or http://myserver/my-service.wsdl"
+                        "example": "expected value"
                     },
-                    "service": {
+                    "request": {
                         "required": true,
-                        "type": "string"
-                    },
-                    "port": {
-                        "required": true,
-                        "type": "string"
-                    },
-                    "operation": {
-                        "required": true,
-                        "type": "string"
+                        "type": {
+                            "body": {
+                                "required": false,
+                                "description": "An expression to be evaluated in the request body",
+                                "type": "string",
+                                "example": "Envelope.Header.MessageHeader.Action"
+                            },
+                            "header": {
+                                "required": false,
+                                "description": "The name of a header qhere to look for the expected value",
+                                "type": "string",
+                                "example": "soapAction"
+                            }
+                        }
                     }
                 }
             },
@@ -58,14 +69,23 @@
                 "defaultValue": "/",
                 "example": "/services/myservice"
             },
-            "headers": {
-                "description": "Include custom soap headers",
-                "type": "object",
-                "defaultValue": {}
-            },
             "response": {
                 "description": "Response to be given when not being used as proxy",
-                "type": "any",
+                "type": {
+                    "headers": {
+                        "description": "Include custom headers",
+                        "type": "object",
+                        "defaultValue": {}
+                    },
+                    "status": {
+                        "required": true,
+                        "type": "int"
+                    },
+                    "payload": {
+                        "required": true,
+                        "type": "any"
+                    }
+                },
                 "defaultValue": {}
             }
         },
